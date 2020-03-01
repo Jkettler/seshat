@@ -1,0 +1,7 @@
+version: '3.7'
+services:
+  redis:
+    image: redislabs/redistimeseries
+    container_name: db-con
+    ports:
+      - '6379:6379'
