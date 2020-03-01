@@ -1,31 +1,32 @@
 require 'redis'
 require 'sinatra/base'
+require_relative 'modules/redis_client'
 
 Dir[File.join(__dir__, 'repositories', '*.rb')].each { |file| require file }
-Dir[File.join(__dir__, 'models', '*.rb')].each { |file| require file }
 
 # https://en.wikipedia.org/wiki/Seshat
 class Seshat < Sinatra::Base
+  include RedisClient
 
   before do
-    @client ||= Redis.new
-    @repo ||= ActiveVisitorMetricRepository.new(@client)
+    @client = RedisClient.init
+    @repo = ActiveVisitorMetricRepository.new(@client)
   end
 
   post '/metrics/:key' do
     success = ->() { [200, JSON.generate({})] }
-    error = ->(val) { halt 400, "unrecognized val: #{val}" }
+    error = ->(val) { halt 400, "Bad Value: #{val}" }
 
     val = params['value'].to_i
 
-    # idempotent create TimeSeries key/value store
+    # idempotent create
     @repo.create
     @repo.new_entity(val) ? success.call : error.call(val)
   end
 
   get '/metrics/:key/sum' do
     success = ->(sum) { [200, JSON.generate({value: sum})] }
-    error = ->() { halt 400 }
+    error = ->() { halt 400, "Bad request or no data to get. Try posting first" }
 
     sum = @repo.sum_vals
     sum ? success.call(sum) : error.call
