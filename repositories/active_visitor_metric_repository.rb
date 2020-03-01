@@ -20,7 +20,7 @@ class ActiveVisitorMetricRepository
   def sum_vals
     return unless index_exists?
     time = current_time_ms
-    @client.call('TS.RANGE', get_index, time - @interval, time, 'AGGREGATION', 'SUM', @interval).first.last
+    @client.call('TS.RANGE', get_index, time - @interval, '+', 'AGGREGATION', 'SUM', @interval).first.last
   end
 
 

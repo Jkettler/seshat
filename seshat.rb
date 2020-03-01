@@ -32,5 +32,5 @@ class Seshat < Sinatra::Base
   end
 
   # run Sinatra server
-  at_exit { Seshat.run! }
+  at_exit { Seshat.run! } unless settings.test?
 end

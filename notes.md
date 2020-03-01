@@ -2,20 +2,20 @@
 
 ### Planning:
 #### Simplest implementation: 
-request -> sinatra \
--> POST -> RDBMS store key, value, created_at\
--> GET -> RDBMS `select value where created_at > Time.now - 1.hour` -> Array.sum
- 
-Pros: simple\
+```
+request -> sinatra ->
+            POST -> RDBMS store key, value, created_at
+            GET -> RDBMS `select value where created_at > Time.now - 1.hour` -> Array.sum
+ ```
+Pros: simple  
 Cons:
 - doesn't feel like best tool for the job
 - concurrency issues?
-- no cache 
+- don't think it would scale 
 - query for every request 
 - probably wouldn't work for persistent connection (e.g. websockets)
 
-# Research:
-## AWS
+## Research:
 - AWS
     - dynamodb (TTL) 
     - lambda
@@ -35,7 +35,7 @@ Cons:
     - http://sinatrarb.com/intro.html
 
 - repository pattern
-    - Definitely not necessary for this small project, but interested in learning
+    - Definitely not necessary for this small project, but want to get a feel for it
     
 - ETags
     - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag
@@ -46,8 +46,6 @@ Cons:
 - time window flexibility (1 hour is arbitrary)
 - dockerized
 
-concerns:
-- public or private api? how much to trust user data? (default: never trust client data)
 
 
 # Dev 

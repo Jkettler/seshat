@@ -1,3 +1,5 @@
 source 'https://rubygems.org'
 gem 'sinatra'
 gem 'redis'
+gem 'test-unit'
+gem 'rack-test'
