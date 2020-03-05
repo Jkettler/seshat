@@ -6,3 +6,4 @@ if [ -z "$1" ]
     exit 1
 fi
 curl -X POST -d "value=$1" localhost:4567/metrics/active_visitors
+curl -X POST -d "value=$1" localhost:4567/metrics/some_other_metric

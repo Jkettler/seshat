@@ -1,45 +1,39 @@
 class MetricRepository
 
-  ONE_HOUR = 3600000
-  THIRTY_SECS = 30000
-
-  def initialize(client, interval = ONE_HOUR)
-    @client = client
-    @interval = interval
-  end
-
-  def create
-    return if index_exists?
-    @client.call('TS.CREATE', get_index)
-  end
-
-  def new_entity(value)
-    return unless value && (value.to_f > 0)
-    @client.call('TS.ADD', get_index, '*', value.to_f)
-  end
-
-  def sum_vals
-    return unless index_exists?
-    time = current_time_ms
-    @client.call('TS.RANGE', get_index, time - @interval, time, 'AGGREGATION', 'SUM', @interval).first.last
-  end
+  COMMANDS = {
+      add: 'TS.ADD',
+      create: 'TS.CREATE',
+      range: 'TS.RANGE',
+      info: 'TS.INFO',
+      time: 'TIME',
+      delete: 'DEL'
+  }.freeze
 
 
-  private
-
-  def current_time_ms
-    @client.call('TIME')[0].to_i * 1000
-  end
-
-  def index_exists?
-    begin
-      @client.call('TS.INFO', get_index)
-    rescue Redis::CommandError
-      false
+  class << self
+    def create(client, key)
+      client.call(COMMANDS[:create], key)
     end
-  end
 
-  def get_index
-    raise 'Must be defined in subclass'
+    def new_entity(client, key, value)
+      client.call(COMMANDS[:add], key, '*', value)
+    end
+
+    def sum_vals_for_interval(client, key, interval)
+      start_time = current_time_ms(client)
+      client.call(COMMANDS[:range], key, start_time - interval, start_time, 'AGGREGATION', 'SUM', interval)
+    end
+
+    def current_time_ms(client)
+      client.call(COMMANDS[:time]).first.to_i * 1000
+    end
+
+    def delete(client, key)
+      client.call(COMMANDS[:delete], key)
+    end
+
+    def info(client, key)
+      client.call(COMMANDS[:info], key)
+    end
   end
 end

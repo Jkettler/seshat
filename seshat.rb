@@ -1,6 +1,8 @@
 require 'redis'
 require 'sinatra/base'
 require_relative 'modules/redis_client'
+require_relative 'helpers/api_helpers'
+require_relative 'models/metric'
 
 Dir[File.join(__dir__, 'repositories', '*.rb')].each { |file| require file }
 
@@ -10,26 +12,36 @@ class Seshat < Sinatra::Base
 
   before do
     @client = RedisClient.init
-    @repo = ActiveVisitorMetricRepository.new(@client)
   end
 
   post '/metrics/:key' do
     success = ->() { [200, JSON.generate({})] }
-    error = ->(val) { halt 400, "Bad Value: #{val}" }
+    error = ->(val) { halt 400, "Bad value or unknown key. value: #{val}, key: #{params['key']}" }
+    begin
+      metric = Metric.new(@client, params['key'])
+    rescue RuntimeError, 'Unknown Metric'
+      nil
+    end
 
-    val = params['value'].to_i
-
-    # idempotent create
-    @repo.create
-    @repo.new_entity(val) ? success.call : error.call(val)
+    if metric
+      metric.new_entity(params['value'])
+      success.call
+    else
+      error.call(params['value'])
+    end
   end
 
   get '/metrics/:key/sum' do
     success = ->(sum) { [200, JSON.generate({value: sum})] }
-    error = ->() { halt 400, "Bad request or no data to get. Try posting first" }
+    error = ->() { halt 400, "Bad key or no data to get. Try posting first" }
 
-    sum = @repo.sum_vals
-    sum ? success.call(sum) : error.call
+    begin
+      metric = Metric.new(@client, params['key'])
+    rescue RuntimeError, 'Unknown Metric'
+      nil
+    end
+
+    metric ? success.call(metric.sum_vals) : error.call
   end
 
   # run Sinatra server
