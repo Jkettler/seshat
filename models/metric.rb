@@ -1,46 +1,39 @@
-require_relative '../helpers/api_helpers'
 require_relative '../repositories/metric_repository'
 
 class Metric
-  include ApiHelpers
 
   ONE_HOUR = 3600000
   THIRTY_SECS = 30000
 
-  KEY_WHITELIST = %w(ActiveVisitors SomeOtherMetric TestKey).freeze
+  KEY_WHITELIST = %w(active_visitors some_other_metric test_key).freeze
 
   attr_accessor :interval
 
   def initialize(client, key, interval = ONE_HOUR)
 
-    validated_key = validate_key(key)
-    raise RuntimeError, 'Unknown Metric' unless validated_key || key.nil?
+    validate_client client
+    validate_key key
+    validate_interval interval
 
-    @client = client
-    @key = validated_key
     @repo = MetricRepository
+    @client = client
+    @key = key
     @interval = interval
-  end
+    @created_at = @repo.current_time_ms(@client)
 
-  def validate_key(string)
-    key_class = to_class(string)
-    key_class if KEY_WHITELIST.include?(key_class)
-  end
-
-  def create_index!
-    @repo.create(@client, @key) unless index_exists? || @key.nil?
+    create_index! unless index_exists?
   end
 
   def new_entity(val)
-    create_index! unless index_exists?
-    @repo.new_entity(@client, @key, val) if valid_value?(val)
+    validate_value val
+    @repo.new_entity(@client, @key, val)
   end
 
   def sum_vals
     @repo.sum_vals_for_interval(@client, @key, @interval).last.last
   end
 
-  def delete
+  def delete_key
     @repo.delete(@client, @key) if index_exists?
   end
 
@@ -52,16 +45,32 @@ class Metric
     end
   end
 
-  def valid_value?(val)
-    val.to_f && (val.to_f > 0)
-  end
-
   def index_exists?
     begin
       get_info
     rescue
       nil
     end
+  end
+
+  def validate_interval(interval)
+    raise RangeError, 'Interval must be a positive integer' unless interval && interval.to_i > 0
+  end
+
+  def validate_client(client)
+    raise ArgumentError, 'Invalid redis client provided' unless client.is_a? Redis
+  end
+
+  def validate_value(val)
+    raise ArgumentError, "Invalid Value: #{val}" unless val && (val.to_f > 0)
+  end
+
+  def validate_key(string)
+    raise ArgumentError, "Unknown Metric: #{string}" unless KEY_WHITELIST.include?(string)
+  end
+
+  def create_index!
+    @repo.create(@client, @key) unless index_exists?
   end
 
 end

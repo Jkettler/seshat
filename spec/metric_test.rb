@@ -1,7 +1,6 @@
 require_relative '../models/metric'
 require_relative '../modules/redis_client'
 require "test/unit"
-require 'redis'
 
 
 class MetricTest < Test::Unit::TestCase
@@ -15,12 +14,7 @@ class MetricTest < Test::Unit::TestCase
   end
 
   def teardown
-    @metric.delete
-  end
-
-  def test_create_index!
-    @metric.create_index!
-    assert_not_nil(@metric.index_exists?)
+    @metric.delete_key
   end
 
   def test_new_entity
@@ -29,13 +23,15 @@ class MetricTest < Test::Unit::TestCase
   end
 
   def test_new_entity_bad_key
-    assert_raise RuntimeError, 'Unknown Key' do
+    assert_raise ArgumentError, "Unknown Key: bogo_sort" do
       Metric.new(@client, 'bogo_sort')
     end
   end
 
   def test_new_entity_bad_value
-    @metric.new_entity(-2)
+    assert_raise ArgumentError, "Invalid Value: -2" do
+      @metric.new_entity(-2)
+    end
 
     assert_equal(0, @metric.get_info[1])
   end
@@ -46,7 +42,7 @@ class MetricTest < Test::Unit::TestCase
     @metric.new_entity(15)
     sleep 1
     assert_equal(2, @metric.get_info[1])
-    assert_equal("20", @metric.sum_vals)
+    assert_equal('20', @metric.sum_vals)
   end
 
   def test_sum_vals_expire
@@ -55,9 +51,9 @@ class MetricTest < Test::Unit::TestCase
 
     sleep 1 # wait for writes to finish
 
-    assert_equal("15", @metric.sum_vals)
+    assert_equal('15', @metric.sum_vals)
     sleep 3 # wait for interval to expire
-    assert_equal("0", @metric.sum_vals)
+    assert_equal('0', @metric.sum_vals)
   end
 
 end
