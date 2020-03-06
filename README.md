@@ -1,34 +1,45 @@
 # Readme
 
-### Silvercar Metric Service
-#### A metric logging service that sums metrics by time window for the most recent hour
+### Seshat Metric Service (https://en.wikipedia.org/wiki/Seshat)
+### Description:
+A metric logging service that sums metrics by time window for the most recent hour using pure Ruby and Redis Timeseries.  
+Effort was made to keep the requirements minimal and the code clean and performant.
+
 
 ### 1. Dependencies
-1. Docker Compose
-2. Ruby (I used 2.6.2), bundler 
-
+- Docker Compose
+- Ruby (I used 2.6.2)
+- bundler 
 
 ### 2. Build/Run 
 To run locally, just run `scripts/build.sh` from a console in the project directory.  
 The script calls `bundle install` and `docker-compose up` to build/run the redis image and then `ruby seshat.rb` to start the server.  
 There are also scripts in that folder to call the API's `post` and `sum` endpoints, and to run tests.  
-- `scripts/post.sh 15`
-- `scripts/sum.sh`
+- `scripts/post.sh active_visitors 15`
+- `scripts/sum.sh active_visitors`
 - `scripts/run_tests.sh`
 
-### 3. Note to whoever is reviewing this
+### 3. Other Info
+Data persists as long as the Redis container is running. Restarting it will wipe everything.  
+You can easily make more metrics available by adding the desired endpoint to the `KEY_WHITELIST` constant in `models/metric.rb`  
 
-There's another markdown file in this directory called `notes.md` that contain some of the notes and thoughts I had during the research portion of this project.
-I looked at quite a few different technologies before settling on Redis' Timeseries module, which not only seemed like the right tool for the job, but also didn't require a lot of configuration out of the box. 
-
-I also wanted to take a shot at the Repository pattern that I learned about for the first time when I was in the office on Thursday.  
-
-In the context of this one-off project, both redis and repository patterns are a bit much, but I enjoy learning/trying new things and one-off projects are the perfect time to do so.
-
-This took me about a day to do, with a good chunk of that time being research.
- 
-I had a lot of fun with this and I look forward to y'all's feedback!  
-
-Thanks,  
-Jimmy
-
+### 4. Sample Input/Output
+```
+$ curl localhost:4567/metrics/some_other_metric/sum
+{"value":"0"}
+$ curl -X POST -d "value=15" localhost:4567/metrics/some_other_metric
+{}
+$ curl localhost:4567/metrics/some_other_metric/sum
+{"value":"15"}
+$ curl -X POST -d "value=5" localhost:4567/metrics/some_other_metric
+{}
+$ curl localhost:4567/metrics/some_other_metric/sum
+{"value":"20"}
+.
+.
+# wait an hour
+.
+.
+$ curl localhost:4567/metrics/some_other_metric/sum
+{"value":"0"}
+```

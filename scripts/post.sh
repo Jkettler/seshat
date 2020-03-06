@@ -13,3 +13,7 @@ if [ -z "$2" ]
 fi
 curl -X POST -d "value=$2" "localhost:4567/metrics/$1"
 
+#curl "localhost:4567/metrics/some_other_metric/sum"
+#curl -X POST -d "value=15" "localhost:4567/metrics/some_other_metric"
+
+

@@ -2,7 +2,6 @@ require 'sinatra/base'
 require_relative 'modules/redis_client'
 require_relative 'models/metric'
 
-# https://en.wikipedia.org/wiki/Seshat
 class Seshat < Sinatra::Base
   include RedisClient
 
