@@ -27,12 +27,16 @@ You can easily make more metrics available by adding the desired endpoint to the
 ```
 $ curl localhost:4567/metrics/some_other_metric/sum
 {"value":"0"}
+
 $ curl -X POST -d "value=15" localhost:4567/metrics/some_other_metric
 {}
+
 $ curl localhost:4567/metrics/some_other_metric/sum
 {"value":"15"}
+
 $ curl -X POST -d "value=5" localhost:4567/metrics/some_other_metric
 {}
+
 $ curl localhost:4567/metrics/some_other_metric/sum
 {"value":"20"}
 .
